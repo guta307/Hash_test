@@ -10,5 +10,8 @@ router.get("/user/validate/:id", UserController.validate)
 
 router.post("/user/login", UserController.login)
 
+router.post("/user/requestPassword", UserController.requestChangePassword)
+
+router.put("/user/changePassword", UserController.ChangePassword)
 
 export default router;
