@@ -10,6 +10,7 @@ import FieldValidation from "../../decorator/FieldValidation.js";
 
 /*UTILS*/
 import { validationEmail } from "../../utils/emailSender.js";
+import { generateOneTimeToken, validateToken } from "../../utils/jwt.js";
 
 export class UserController {
 
@@ -37,7 +38,8 @@ export class UserController {
       const register = new User({...newRegister,confirmed:false});
       await register.save();
 
-      await validationEmail(register.email,register.name)
+      const token = generateOneTimeToken()
+      await validationEmail(register.email,register.name,register.id,token)
 
       return res.status(200).json(register);
     }
@@ -45,5 +47,25 @@ export class UserController {
         return res.status(500).json(e);
     }
   }
+  
+  static async validate(req:Request,res:Response): Promise<void> {
+      try{
+        const {token} = req.query; // Obtém o token da consulta da URL
 
-}
+      // Valide o token
+      const ValidToken = validateToken(token as string);
+
+      if (!ValidToken) {
+        // Token válido, faça o que for necessário aqui
+        return res.status(401).redirect('https://www.youtube.com/');
+    }
+        const { id } = req.params;
+        await User.update({confirmed:true}, { where: { id } });
+        return res.redirect('https://www.google.com/');
+      }
+      catch(e){
+        res.status(500).json({ error: 'Ocorreu um erro' });
+      }
+    }
+  }
+  
