@@ -6,7 +6,8 @@ import {
   AllowNull,
   BeforeCreate,
   IsEmail,
-  DataType
+  DataType,
+  BeforeUpdate
 } from "sequelize-typescript";
 import { createHashWithSalt } from "../utils/Crypto";
 import { v4 as uuidv4 } from 'uuid';
@@ -43,11 +44,20 @@ class User extends Model {
   
   // Hook para criptografar a senha antes de criar o usuário
   @BeforeCreate
-  static async hashPassword(user: User) {
+static async hashPasswordBeforeCreate(user: User) {
+  const hashResult = createHashWithSalt(user.passwordHash);
+  user.salt = hashResult.salt;
+  user.passwordHash = hashResult.passwordHash;
+}
+
+  @BeforeUpdate
+  static async hashPasswordBeforeUpdate(user: User) {
     const hashResult = createHashWithSalt(user.passwordHash);
     user.salt = hashResult.salt;
     user.passwordHash = hashResult.passwordHash;
   }
+
+  
 }
 
 export default User;
