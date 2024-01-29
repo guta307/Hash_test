@@ -6,6 +6,7 @@ const router = Router();
 
 router.post("/user/create", UserController.create);
 
+router.get("/user/validate/:id", UserController.validate)
 
 
 export default router;
