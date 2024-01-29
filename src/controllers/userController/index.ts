@@ -9,7 +9,7 @@ import { UserInterface } from "../../interface/user.js";
 import FieldValidation from "../../decorator/FieldValidation.js";
 
 /*UTILS*/
-import { validationEmail } from "../../utils/emailSender.js";
+import { changePasswordEmail, validationEmail } from "../../utils/emailSender.js";
 import { SignedToken, generateOneTimeToken, validateToken } from "../../utils/jwt.js";
 import { Authentication } from "../../utils/Crypto.js";
 
@@ -95,6 +95,44 @@ export class UserController {
         }
     }
 
-    
-  }
-  
+    static async requestChangePassword(req: Request, res: Response):Promise<Response>{
+      try{
+        const access = req.body;
+        const register  = await User.findOne({where:{email:access.email}})
+
+        if(register){
+            const token = generateOneTimeToken()
+            changePasswordEmail(register.email,register.name,register.id,token)
+            return res.status(200).json({msg:"Email enviado"});
+        }
+
+        return res.status(401).json({error:"no account found"})
+      }
+      
+      catch(e){
+        return  res.status(500).json({ error:e as string})
+      }
+
+    }
+
+    @FieldValidation<UserInterface>({
+      email:"",
+      passwordHash: "",
+    })
+    static async ChangePassword(req: Request, res: Response):Promise<Response>{
+      try{
+        const register = req.body;
+        const user = await User.findOne({ where: { email: register.email } });
+        if (user) {
+          user.passwordHash = register.passwordHash;
+          await user.save();
+         return res.status(200).json({ msg: 'success' });
+      }
+
+      return res.status(401).json({error:"no account found"})
+      }
+      catch(e){
+        return  res.status(500).json({ error:e as string})
+      }
+    }
+}
