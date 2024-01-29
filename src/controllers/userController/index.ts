@@ -10,7 +10,8 @@ import FieldValidation from "../../decorator/FieldValidation.js";
 
 /*UTILS*/
 import { validationEmail } from "../../utils/emailSender.js";
-import { generateOneTimeToken, validateToken } from "../../utils/jwt.js";
+import { SignedToken, generateOneTimeToken, validateToken } from "../../utils/jwt.js";
+import { Authentication } from "../../utils/Crypto.js";
 
 export class UserController {
 
@@ -67,5 +68,33 @@ export class UserController {
         res.status(500).json({ error: 'Ocorreu um erro' });
       }
     }
+
+    @FieldValidation<UserInterface>({
+      email: "",
+      passwordHash: "",
+    })
+    static async login(req: Request, res: Response): Promise<Response> {
+
+        try{
+              const access = req.body;
+              const register  = await User.findOne({where:{email:access.email}})
+
+              if(register){
+                const result = Authentication(access.passwordHash,register.salt,register.passwordHash)
+                if(result){
+                  const token = SignedToken(register.id)
+                  return res.status(200).json({ token });
+                }
+                return  res.status(401).json({ error:"Senha incorreta" });
+              }
+
+              return  res.status(401).json({ error:"Email não encontrado" })
+        }
+        catch(e){
+          return  res.status(500).json({ error:e as string})
+        }
+    }
+
+    
   }
   
