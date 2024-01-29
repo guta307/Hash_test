@@ -3,19 +3,20 @@ import {
   Column,
   Model,
   PrimaryKey,
-  AutoIncrement,
   AllowNull,
   BeforeCreate,
-  IsEmail
+  IsEmail,
+  DataType
 } from "sequelize-typescript";
-import createHashWithSalt from "../utils/Crypto";
+import { createHashWithSalt } from "../utils/Crypto";
+import { v4 as uuidv4 } from 'uuid';
 
 @Table({ paranoid: true })
 class User extends Model {
+
   @PrimaryKey
-  @AutoIncrement
-  @Column
-  declare id: number;
+  @Column({ type: DataType.UUID })
+  declare id: string;
 
   @Column
   declare name: string;
@@ -34,6 +35,12 @@ class User extends Model {
   @Column
   declare confirmed: boolean;
 
+  
+  @BeforeCreate
+  static assignUuid(user: User) {
+    user.id = uuidv4();
+  }
+  
   // Hook para criptografar a senha antes de criar o usuário
   @BeforeCreate
   static async hashPassword(user: User) {
