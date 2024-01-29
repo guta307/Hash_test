@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 import dotenv from "dotenv";
 dotenv.config();
 
-export async function validationEmail(email: string, nome: string) {
+export async function validationEmail(email: string, nome: string,id:string,token:string) {
     // Configuração do transporte de e-mail
     let transporter = nodemailer.createTransport({
         service: 'Hotmail',
@@ -18,7 +18,7 @@ export async function validationEmail(email: string, nome: string) {
       to: email, // lista de destinatários
       subject: "Confirmação de Cadastro", // Assunto
       text: `Olá, ${nome}! Por favor, confirme seu cadastro clicando aqui.`, // corpo da mensagem
-      html: `<b>Olá, ${nome}!</b><br>Por favor, confirme seu cadastro clicando <a href="link_de_confirmacao">aqui</a>.`, // corpo da mensagem em HTML
+      html: `<b>Olá, ${nome}!</b><br>Por favor, confirme seu cadastro clicando <a href="${process.env.ROOT_ADDRESS}/user/validate/${id}?token=${token}">aqui</a>.`, // corpo da mensagem em HTML
     });
   
   }
