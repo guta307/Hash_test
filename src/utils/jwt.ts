@@ -34,3 +34,8 @@ export function validateToken(token:string) {
         return false; // Token inválido
     }
 }
+
+
+export function SignedToken(id:string){
+    return jwt.sign({ userId: id }, process.env.SECRET_PASSWORD);
+}
