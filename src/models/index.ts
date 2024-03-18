@@ -4,10 +4,13 @@ import { Sequelize } from "sequelize-typescript";
 
 import User from "./user.model";
 
+import { setupRelations } from "./relations.js";
+
 import dotenv from "dotenv";
+import VerificationCode from "./verification_code.model";
 dotenv.config();
 const connectionInfo = {
-  database: "rpg",
+  database: "mobile",
   username: "root",
   password: process.env.DB_PASSWORD,
   dialectOptions: {
@@ -19,7 +22,7 @@ const connectionInfo = {
 export const sequelize = new Sequelize({
   dialect: "mysql",
   ...connectionInfo,
-  models: [User],
+  models: [User, VerificationCode],
   benchmark: false,
   // for logging slow queries
   logQueryParameters: true,
@@ -29,21 +32,22 @@ export const sequelize = new Sequelize({
     }
   },
 });
+setupRelations();
 
 export function syncModels() {
-    const alter = true;
+  const alter = true;
 
-    sequelize
-      .sync({
-        alter,
-        //disable log when Syncing
-        logging: false,
-        //logging: console.log
-      })
-      .then(() => {
-        console.log("Synced db.");
-      })
-      .catch((err) => {
-        console.log("Failed to sync db: " + err.message);
-      });
-  }
+  sequelize
+    .sync({
+      alter,
+      //disable log when Syncing
+      logging: false,
+      //logging: console.log
+    })
+    .then(() => {
+      console.log("Synced db.");
+    })
+    .catch((err) => {
+      console.log("Failed to sync db: " + err.message);
+    });
+}

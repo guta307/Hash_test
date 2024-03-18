@@ -1,9 +1,9 @@
 import User from "../../models/user.model.js";
-
+import VerificationCode from "../../models/verification_code.model.js";
 import { Request, Response } from "express";
 /*import de interface*/
 import { UserInterface } from "../../interface/user.js";
-
+import { validationCodeInterface } from "../../interface/validation_code.js";
 /*Decorators*/
 import FieldValidation from "../../decorator/FieldValidation.js";
 
@@ -12,11 +12,7 @@ import {
   changePasswordEmail,
   validationEmail,
 } from "../../utils/emailSender.js";
-import {
-  SignedToken,
-  generateOneTimeToken,
-  validateToken,
-} from "../../utils/jwt.js";
+import { SignedToken, generateOneTimeToken } from "../../utils/jwt.js";
 import { Authentication } from "../../utils/Crypto.js";
 
 export class UserController {
@@ -35,10 +31,18 @@ export class UserController {
         return res.status(400).json({ error: "email in use" });
       }
       const register = new User({ ...newRegister, confirmed: false });
+
       await register.save();
 
-      const token = generateOneTimeToken();
-      await validationEmail(register.email, register.name, register.id, token);
+      const code = await validationEmail(register.email, register.name);
+
+      const codeRegister = new VerificationCode({
+        userId: register.userId,
+        code,
+        expiresAt: new Date(new Date().getTime() + 60 * 60 * 1000),
+      });
+
+      codeRegister.save();
 
       return res.status(200).json(register);
     } catch (e) {
@@ -46,22 +50,30 @@ export class UserController {
     }
   }
 
+  @FieldValidation<validationCodeInterface>({
+    code: "",
+  })
   static async validate(req: Request, res: Response): Promise<void> {
     try {
-      const { token } = req.query; // Obtém o token da consulta da URL
+      const { code } = req.body; // Obtém o token da consulta da URL
+      const register = await VerificationCode.scope("notExpired").findOne({
+        where: {
+          code,
+        },
+      });
 
-      // Valide o token
-      const ValidToken = validateToken(token as string);
-
-      if (!ValidToken) {
-        // Token válido, faça o que for necessário aqui
-        return res.status(401).redirect("https://www.youtube.com/");
+      if (register) {
+        await User.update(
+          { confirmed: true },
+          { where: { userId: register.userId } }
+        );
+        await register.destroy();
+        res.status(200).json({ msg: "account activated" });
+      } else {
+        res.status(401).json({ msg: "no code found" });
       }
-      const { id } = req.params;
-      await User.update({ confirmed: true }, { where: { id } });
-      return res.redirect("https://www.google.com/");
     } catch (e) {
-      res.status(500).json({ error: e as string });
+      res.status(500).json({ e });
     }
   }
 
@@ -82,8 +94,8 @@ export class UserController {
             register.passwordHash
           );
           if (result) {
-            const token = SignedToken(register.id);
-            return res.status(200).json({ token });
+            const token = SignedToken(register.userId);
+            return res.status(200).json({ name: register.name, token });
           }
           return res.status(401).json({ error: "Incorrect password" });
         }
@@ -92,6 +104,7 @@ export class UserController {
 
       return res.status(401).json({ error: "Email not found" });
     } catch (e) {
+      console.log(e);
       return res.status(500).json({ error: e as string });
     }
   }

@@ -2,16 +2,14 @@ import { Router } from "express";
 import { UserController } from "../controllers/userController/index.js";
 const router = Router();
 
-
-
 router.post("/user/create", UserController.create);
 
-router.get("/user/validate/:id", UserController.validate)
+router.put("/user/validate", UserController.validate);
 
-router.post("/user/login", UserController.login)
+router.post("/user/login", UserController.login);
 
-router.post("/user/requestPassword", UserController.requestChangePassword)
+router.post("/user/requestPassword", UserController.requestChangePassword);
 
-router.put("/user/changePassword", UserController.ChangePassword)
+router.put("/user/changePassword", UserController.ChangePassword);
 
 export default router;
